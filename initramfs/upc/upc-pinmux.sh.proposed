@@ -17,7 +17,7 @@
 # (board_do_mpp_config, at every stock boot, before upc.ko or the app)
 # gives these pads UPC-side functions, while U-Boot (so mainline) leaves
 # them GPIO inputs at 0x000c1000. Values are the exact stock readings
-# (docs/kernel/stock_pinmux_eth.txt) and match the vendor table:
+# (docs/stock_pinmux_eth.txt) and match the vendor table:
 #   bank 4 (0xf8044000) pins 24 26             -> 0x00001003 (function 3)
 #   bank 5 (0xf8045000) pins 0-3               -> 0x00001003
 #                       pins 6-14              -> 0x00001001 (function 1)

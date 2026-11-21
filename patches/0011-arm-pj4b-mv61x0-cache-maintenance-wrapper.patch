@@ -2,7 +2,7 @@ From: catawalks <59056948+catawalks@users.noreply.github.com>
 Subject: [PATCH] ARM: PJ4B 88PA61x0: vendor wrapper around D-cache maintenance
 
 Test options for the DP200 nandboot hangs, off by default
-(docs/kernel/nandboot_hang_analysis.md).
+(docs/nandboot_hang_analysis.md).
 ---
 --- a/arch/arm/mm/Kconfig
 +++ b/arch/arm/mm/Kconfig
@@ -17,7 +17,7 @@ Test options for the DP200 nandboot hangs, off by default
 +	  The Marvell 3.2 vendor kernel of the 88PA6170 runs every D-cache
 +	  maintenance routine (by MVA and by set/way) with IRQs disabled,
 +	  after a dsb and a 50-iteration delay loop. The erratum behind it
-+	  is not documented. Test option (docs/kernel/nandboot_hang_analysis.md).
++	  is not documented. Test option (docs/nandboot_hang_analysis.md).
 +
 +config PJ4B_ERRATA_6011
 +	bool "88PA61x0 PJ4B-MP erratum 6011: five LDREX, IRQs off"
@@ -27,7 +27,7 @@ Test options for the DP200 nandboot hangs, off by default
 +	  load is issued five times, and in kernel atomics, locks and bitops
 +	  with IRQs disabled around it. The kuser cmpxchg helpers (user mode)
 +	  get the five loads only. Test option
-+	  (docs/kernel/nandboot_hang_analysis.md).
++	  (docs/nandboot_hang_analysis.md).
 +
  # ARMv6
  config CPU_V6

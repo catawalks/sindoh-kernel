@@ -2,7 +2,7 @@ From: catawalks <59056948+catawalks@users.noreply.github.com>
 Subject: [PATCH] mm: 88PA61x0: fault-around switch without debugfs
 
 Test option for the DP200 NAND-root hangs, off by default
-(docs/kernel/nandboot_hang_analysis.md, hang 14).
+(docs/nandboot_hang_analysis.md, hang 14).
 ---
 --- a/mm/memory.c
 +++ b/mm/memory.c
@@ -14,7 +14,7 @@ Test option for the DP200 NAND-root hangs, off by default
 +#include <linux/moduleparam.h>
 +
 +/*
-+ * DP200 hang analysis (docs/kernel/nandboot_hang_analysis.md, hang 14):
++ * DP200 hang analysis (docs/nandboot_hang_analysis.md, hang 14):
 + * memory.fault_around_pages=1 on the command line, or written to
 + * /sys/module/memory/parameters/fault_around_pages, turns fault-around
 + * off without debugfs. 1 (off) or a power of two; 16 is the default.

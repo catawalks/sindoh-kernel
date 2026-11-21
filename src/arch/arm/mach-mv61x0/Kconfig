@@ -21,7 +21,7 @@ config MV61X0_LAYOUT_PAD
 	  Zero-filled .text, .rodata, .data, .bss and .init.text, linked
 	  where fs/pstore/ and lib/reed_solomon/ would be, so that a kernel
 	  without pstore gets the addresses of one with it. Nothing reads or
-	  runs the padding. Test option (docs/kernel/nandboot_hang_analysis.md,
+	  runs the padding. Test option (docs/nandboot_hang_analysis.md,
 	  hang 24).
 
 if MV61X0_LAYOUT_PAD
@@ -71,7 +71,7 @@ config MV61X0_FORCE_REED_SOLOMON
 	select REED_SOLOMON_DEC8
 	help
 	  The library PSTORE_RAM selects, on its own (no pstore). Test option
-	  (docs/kernel/nandboot_hang_analysis.md, hang 25).
+	  (docs/nandboot_hang_analysis.md, hang 25).
 
 config MV61X0_RAMOOPS_NO_INIT
 	bool "DP200 hang analysis: ramoops_init returns at once"
@@ -79,7 +79,7 @@ config MV61X0_RAMOOPS_NO_INIT
 	help
 	  PSTORE_RAM built in, but ramoops_init neither registers the dummy
 	  device nor the platform driver. Test option
-	  (docs/kernel/nandboot_hang_analysis.md, hang 25).
+	  (docs/nandboot_hang_analysis.md, hang 25).
 
 config MV61X0_DUMMY_PDRV
 	bool "DP200 hang analysis: register a platform driver that binds nothing"
@@ -88,7 +88,7 @@ config MV61X0_DUMMY_PDRV
 	  A platform driver with an OF match table nothing matches,
 	  registered at postcore_initcall as ramoops_init does. Tells whether
 	  any such registration speeds up the two-CPU freeze, or only
-	  ramoops'. Test option (docs/kernel/nandboot_hang_analysis.md,
+	  ramoops'. Test option (docs/nandboot_hang_analysis.md,
 	  hang 25 / nandps4).
 
 config MV61X0_DUMMY_PDRV_AS_RAMOOPS

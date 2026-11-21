@@ -1,4 +1,47 @@
-# Milestone 1: mainline kernel RAM boot (Linux 6.18.59)
+# Mainline Linux for Sindoh 3DWOX printers (Marvell 88PA6170)
+
+A port of mainline Linux (6.18 longterm) to the Marvell 88PA6170 SoC of
+the Sindoh 3DWOX DP200 family, written without vendor source: drivers,
+device tree and patches, plus the notes on how the hardware was worked
+out. It replaces Sindoh's Linux 3.2 so that a current Debian and
+[Klipper](https://github.com/catawalks/sindoh-klipper) can run on the
+printer.
+
+**Status:** it boots from NAND and prints on the maintainer's development
+printer (two CPUs, NAND, Wi-Fi, USB, touch screen, the UPC motion cores).
+It is not part of any release yet: the Klipper USB stick install runs on
+Sindoh's own kernel and does not need this.
+
+**Warning:** writing a kernel to the printer's NAND can brick it. Test
+images are booted from RAM first; see `docs/nand_boot_cmdline.md` and
+`docs/revert_to_stock_plan.md`.
+
+| Path | What |
+|---|---|
+| `src/` | New files for the kernel tree: SoC support, timer, interrupt controllers, NAND, UPC, GPIO, device trees |
+| `patches/` | Numbered patches against Linux 6.18 that hook those files in and fix what the SoC needs |
+| `variants/`, `m1.config` | Kernel configs and device trees for each test and boot variant |
+| `build.sh`, `checkconfig.py` | Build an image (on Linux); check a config |
+| `initramfs/`, `busybox.config`, `wpa_supplicant.config` | The small boot environment |
+| `tools/` | Helpers used by the build and tests |
+| `docs/` | How things work: start with `no_gpl_plan.md` (the plan), `smp_freeze_summary.md`, `upc_mainline_design.md`, `wifi_88w8782.md`, `sd_boot_plan.md` |
+| `docs/history/` | Test logs and investigations, kept for reference |
+
+Scripts that drive the printer during kernel tests (RAM boot from the SD
+card, NAND checks, U-Boot helpers) are in
+[sindoh-klipper/tools](https://github.com/catawalks/sindoh-klipper/tree/main/tools).
+Related repositories are listed in the
+[sindoh-klipper README](https://github.com/catawalks/sindoh-klipper#the-projects-repositories).
+
+**License:** GPL-2.0, like Linux ([LICENSE](LICENSE)); files carry their
+own SPDX headers. Nothing from Sindoh's or Marvell's source is included;
+the `docs/vendor_*` files are facts read from a running stock printer.
+
+The rest of this page is the build's own detailed description.
+
+---
+
+## Build details: the "m1" image (Linux 6.18.59)
 
 This builds `m1.uimg`, a mainline Linux 6.18.59 image for the DP200's
 Marvell 88PA6170 (see `docs/no_gpl_plan.md`, section 2.4). U-Boot runs it
@@ -18,7 +61,7 @@ on this SoC needs that exact version.
 | SIC irqchips | `src/drivers/irqchip/irq-mv61x0-sic.c`, `patches/0002-*.patch` | SIC0 (0xf9300100, SPI 101) and SIC1 (0xf9300200, SPI 103), 32 inputs each, chained. Registers from the vendor: +0 enable-set, +0xc clear, +0x14 enable-clear, +0x18 status. No users yet; the DEC timers are SIC0 inputs 0-7. |
 | Ethernet | DTS `ethernet@f9050000`, `m1.config` | stmmac (`dwmac-generic`) on the Synopsys GMAC (SPI 64). MDIO clock range CR=0 (`clk_csr`, as the vendor). The 88E1510 at MDIO address 0 uses phylib's generic driver, so its strap RGMII delays stay as the vendor has them. GPIO 62 (bank B bit 30) is the PHY reset the vendor releases at boot; this kernel does not touch it. `/init` sets eth0 to 10.10.0.250/24. |
 | USB host | `src/drivers/phy/marvell/phy-mv61x0-usb.c`, `patches/0003-*.patch`, DTS | `generic-ehci` on the ChipIdea host (0xf9041100, SPI 66) and OTG (0xf9048100, SPI 67) controllers, with a transaction translator (ChipIdea host-mode reset). The PHY driver replays the vendor's `usb_phy_init` (PLL at 0xf904f004, PHYs at 0xf904f040/80/c0). Enumeration only: no storage, serial, net or video class drivers. |
-| Wi-Fi | `patches/0004-mwifiex-usb-add-88w8782.patch`, `m1.config`, `build.sh` | mwifiex patched for the 88W8782 (1286:2040): one product ID, and the firmware starts in place without re-enumerating. cfg80211 with the world regulatory domain only (no signed regdb, no crypto). The firmware `mrvl/usb8782_uapsta.bin` is copied from the local stock dump into the initramfs (md5 checked). **It is a Marvell binary: never commit it, and don't publish built images.** Static `iw` 6.17 on libnl 3.12. Details: `docs/kernel/wifi_88w8782.md`. |
+| Wi-Fi | `patches/0004-mwifiex-usb-add-88w8782.patch`, `m1.config`, `build.sh` | mwifiex patched for the 88W8782 (1286:2040): one product ID, and the firmware starts in place without re-enumerating. cfg80211 with the world regulatory domain only (no signed regdb, no crypto). The firmware `mrvl/usb8782_uapsta.bin` is copied from the local stock dump into the initramfs (md5 checked). **It is a Marvell binary: never commit it, and don't publish built images.** Static `iw` 6.17 on libnl 3.12. Details: `docs/wifi_88w8782.md`. |
 | Webcam | `m1.config`, `tools/uvcgrab.c` | UVC driver for the 0c45:6341 camera; `uvcgrab` saves one MJPEG frame. |
 | Panel console | DTS `/chosen/framebuffer@18000000`, `m1.config` | `simple-framebuffer` on the boot-logo buffer U-Boot left running: 800×480 RGB565, stride 1600. fbcon shows the kernel console there (`console=tty0`). Display only: no touch, no backlight control. The panel is mounted in portrait; append `fbcon=rotate:1` (or 3) to turn the text. |
 | CPU setup | `patches/0001-*.patch` (proc-v7.S) | A PJ4B-MP entry (MIDR 0x560f5840/0xff0ffff0) with the vendor's `__v7_pj4bmp_setup` register values, including the A9-style SMP/FW bits in ACTLR. Mainline's `__v7_pj4b_setup` targets Armada XP and sets different bits. |
@@ -97,13 +140,13 @@ back to U-Boot and the stock firmware.
 
 | Image (md5) | Result |
 |---|---|
-| 870017 B, `86595c02…` (2026-10-29) | Boots to the shell. Earlycon, DT, GIC, clocksource and UART work (log: `docs/history/kernel/m1_boot1.log`). **Timekeeping broken:** uptime jumps by 2^32 µs, `sleep` returns at once, timer 1 interrupts stop after ~0.5 s, and timer 2's status bit stays pending. |
-| 771801 B, `c073d1ea…` | Status bits are cleared after timer 2 starts; IRQs 52/54/55 are taken and acked like the vendor's; clocksource reads are filtered and counted; restart handler; `panic=10`; config trimmed (VT, input, HID, STRICT_KERNEL_RWX off). **Boot 2 (`docs/history/kernel/m1_boot2.log`):** timer probe status 0; the restart handler works (panic → reset → stock). `/init` died with exit 2 at 0.40 s because BusyBox lacked `$(( ))` (`FEATURE_SH_MATH` off). Linux IRQ 24 is now timer 0; timer 1 is IRQ 27. |
+| 870017 B, `86595c02…` (2026-10-29) | Boots to the shell. Earlycon, DT, GIC, clocksource and UART work (log: `docs/history/m1_boot1.log`). **Timekeeping broken:** uptime jumps by 2^32 µs, `sleep` returns at once, timer 1 interrupts stop after ~0.5 s, and timer 2's status bit stays pending. |
+| 771801 B, `c073d1ea…` | Status bits are cleared after timer 2 starts; IRQs 52/54/55 are taken and acked like the vendor's; clocksource reads are filtered and counted; restart handler; `panic=10`; config trimmed (VT, input, HID, STRICT_KERNEL_RWX off). **Boot 2 (`docs/history/m1_boot2.log`):** timer probe status 0; the restart handler works (panic → reset → stock). `/init` died with exit 2 at 0.40 s because BusyBox lacked `$(( ))` (`FEATURE_SH_MATH` off). Linux IRQ 24 is now timer 0; timer 1 is IRQ 27. |
 | 773633 B, `d583f22f…` | `FEATURE_SH_MATH` on. `/init` is minimal and runs the checks as a child (`/etc/m1-checks.sh`), so PID 1 can't exit. The driver logs timer 1 interrupts #1-3, #100, #1000 and #10000 with the raw timer 2 count. **Boot 3:** the timer 1 tick runs at 100 Hz (#1000 at 10.017 s), uptime matches real time, no clocksource glitches. But every timed sleep returns at once: tinyconfig leaves `COMPAT_32BIT_TIME` off, musl uses the time32 `nanosleep`/`ppoll` for small values, and gets ENOSYS. |
 | 783265 B, `f34f8ba8…` | `COMPAT_32BIT_TIME` and `POSIX_TIMERS` on. **Boot 4: milestone 1 done.** `sleep 2` = 2014135 µs, `sleep 10` = 10.0 s, timer 1 at 100 Hz, no glitches, UART input works, `reboot -f` returns to stock. |
 | 842710 B, `25e2d0da…` | Next steps: SMP (no `maxcpus=1`), SIC0/SIC1 irqchip, panel console via simple-framebuffer (VT + fbcon; keyboard/mouse/serio off). `/init` also prints the online CPUs and `/proc/fb`. **Boot 5:** 2 CPUs, fbcon on the panel, timing right, SIC probe lines present. |
 | 1333269 B, `6006330e…` | Ethernet (stmmac, 10.10.0.250/24) and USB host (EHCI ×2 + vendor PHY init). BusyBox adds `ifconfig`, `route`, `ping`, `tftp`, `nc` and `lsusb`. |
-| 1333685 B, `462a7845…` | Same kernel; `/init` also prints the MDIO PHY ID and, for each USB device, the ID, bcdDevice, interfaces and endpoints (8782 boot-ROM vs firmware state, see `docs/kernel/wifi_88w8782.md`). No Ethernet cable on this printer: probe and PHY ID only. **Boot 6:** both EHCI controllers, hub 1a40:0101, Wi-Fi 1286:2040 (bcd 0x3119, 3+3 bulk endpoints) and webcam 0c45:6341 at 480 Mb/s; USB PHYs already powered by U-Boot. stmmac probes as DWMAC1000 (3.6), but the PHY at address 0 reads ID 0 (in reset?). |
+| 1333685 B, `462a7845…` | Same kernel; `/init` also prints the MDIO PHY ID and, for each USB device, the ID, bcdDevice, interfaces and endpoints (8782 boot-ROM vs firmware state, see `docs/wifi_88w8782.md`). No Ethernet cable on this printer: probe and PHY ID only. **Boot 6:** both EHCI controllers, hub 1a40:0101, Wi-Fi 1286:2040 (bcd 0x3119, 3+3 bulk endpoints) and webcam 0c45:6341 at 480 Mb/s; USB PHYs already powered by U-Boot. stmmac probes as DWMAC1000 (3.6), but the PHY at address 0 reads ID 0 (in reset?). |
 | 1863877 B, `a15d015d…` | Wi-Fi: mwifiex + 8782 patch + stock firmware, `iw`; `/init` waits for `mlan0` and runs a **passive** scan (no association). Webcam: UVC + `uvcgrab` (one frame to `/tmp/frame.jpg`). |
 
 ## Expected output, and what a hang means
@@ -147,7 +190,7 @@ Wi-Fi, media or panel. Its `/init` prints the MDIO PHY ID and GPIO 62's
 state, then waits.
 
 1. **Pin mux and PHY reset** (approved by the user; test 2 passed,
-   docs/history/kernel/m1_eth_test2.md). U-Boot sets neither. `ethload` runs
+   docs/history/m1_eth_test2.md). U-Boot sets neither. `ethload` runs
    `/etc/eth-pinmux.sh` first: GPIO 48-61 and 63 to function 1 (0x1001, the
    RGMII + MDC/MDIO pins from the vendor's gr_def_mpp_list), bank 3 to the
    stock state, then GPIO 62 low for 125 ms, then it rebinds stmmac.
@@ -230,8 +273,8 @@ Passed in wifi_join_test1 (../../docs/history/kernel/wifi_join_test1.md, built a
 ### upc: the UPC driver (Klipper MCUs)
 
 Test 1 (probe, hold, safe, reboot and panic paths) passed:
-docs/history/kernel/upc_test1.md. Test 2 (probe firmware, safety paths) and 2c
-(XENA inputs) passed: docs/history/kernel/upc_test2.md.
+docs/history/upc_test1.md. Test 2 (probe firmware, safety paths) and 2c
+(XENA inputs) passed: docs/history/upc_test2.md.
 
 XENA inputs: the endstop and cartridge-lever pads are bank 5 pins 20-24
 (X = 20 -> XIRD1 bit 10, Y = 21 -> bit 11, 22 probably Z, lever = 23 ->
@@ -285,7 +328,7 @@ future request.
         outputs off", then the reset to stock after 10 s.
 5. Later, one at a time with the user present: Klipper firmware plus
    `upctool bridge`, then heaters and motion
-   (`docs/kernel/upc_mainline_design.md`, bring-up order).
+   (`docs/upc_mainline_design.md`, bring-up order).
 
 ### i2c: touch controller, read-only
 
@@ -381,7 +424,7 @@ as "corrupted" in UBI's attach log. That is expected; UBI refuses only at
 
 UBI/UBIFS come later. The RTC driver only reads the seconds counter at
 0xf8100000 + 0x0c and logs whether it is counting. The vendor's setup
-sequence is a proposal (docs/kernel/rtc_setup.md). `/etc/m1-variant.sh`
+sequence is a proposal (docs/rtc_setup.md). `/etc/m1-variant.sh`
 prints one line per block. Check each against that variant's own card.
 
 ### nandboot: the end-goal image for mtd0 (built, not booted)
@@ -389,7 +432,7 @@ prints one line per block. Check each against that variant's own card.
 `VARIANT=nandboot` = full + NAND writes (patch 0010 v2, the window opened
 for mtd6 from the command line) + USB storage, without the 8782 firmware,
 with `CONFIG_CMDLINE_FORCE` so the stock U-Boot line is ignored
-(docs/kernel/nand_boot_cmdline.md). Its /init (`initramfs/nandboot/init`):
+(docs/nand_boot_cmdline.md). Its /init (`initramfs/nandboot/init`):
 revert from RAM for the root marker `/.dp200-revert` (written by the
 screen app's back-to-stock popup); otherwise the root is a card/stick
 partition with `/.dp200-root` (then mtd6 is detached and its write window

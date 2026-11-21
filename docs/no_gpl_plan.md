@@ -31,22 +31,22 @@ document says otherwise, they win:
   window), a UBI wear readout, power-loss behaviour of the UBIFS root,
   storage-tier card detection in the initramfs. (The touch driver and the
   D2 Wi-Fi fix of 909c509 work on hardware: D2 round 2, 10-31, recorded in
-  docs/kernel/debian_root_boot.md: Wi-Fi joined, Klipper ready, taps at the
+  docs/debian_root_boot.md: Wi-Fi joined, Klipper ready, taps at the
   four corners map to the right screen corners with stock's calibration.)
 - **The stock U-Boot command line** for our kernel in mtd0, and the size
-  budget: docs/kernel/nand_boot_cmdline.md.
+  budget: docs/nand_boot_cmdline.md.
 
 Nothing here touched the printer. Every new fact comes from offline analysis
 of the vendor kernel image in our own NAND dump (`nand_images/mtd0.bin`),
 using `tools/kernel_re/` (README there), plus the existing
-`docs/kernel/vendor_hw_snapshot.txt` and the vendor `.config`.
+`docs/vendor_hw_snapshot.txt` and the vendor `.config`.
 
 New files:
-- `docs/kernel/vendor_System.map`: 38,440 kernel symbols, rebuilt from
+- `docs/vendor_System.map`: 38,440 kernel symbols, rebuilt from
   kallsyms;
-- `docs/kernel/vendor_hwtables.txt`: the static I/O map, every platform
+- `docs/vendor_hwtables.txt`: the static I/O map, every platform
   MMIO/IRQ resource, and the machine record;
-- `kernel/m1/`: milestone 1 build (timer driver, device tree, config, build script).
+- ``: milestone 1 build (timer driver, device tree, config, build script).
 
 **Short version:**
 - **Modules (route A):** they cover the missing *drivers*: USB serial,
@@ -72,9 +72,9 @@ New files:
 
 ## Status 2026-10-30: what works on the printer (RAM boot only)
 
-The images are built by `kernel/m1/build.sh`; the boot history is in
-`kernel/m1/README.md` and the logs are `docs/history/kernel/m1_boot1.log` ..
-`docs/history/kernel/m1_boot7.log`. Linux 6.18.59 starts from U-Boot `bootm`. The image is typed
+The images are built by `build.sh`; the boot history is in
+`README.md` and the logs are `docs/history/m1_boot1.log` ..
+`docs/history/m1_boot7.log`. Linux 6.18.59 starts from U-Boot `bootm`. The image is typed
 in over the serial console by `tools/uboot_upload.py` at about 111 KB/min:
 870 KB took 7:38, and the 1.86 MB Wi-Fi image takes about 17 min. Nothing
 is written to NAND or to the U-Boot environment. `reboot` and a panic
@@ -114,13 +114,13 @@ Traps found on the way, all fixed in `m1.config`/`busybox.config`:
 | # | Step | Work (offline unless noted) | The user must |
 |---|---|---|---|
 | 1 | **Join Wi-Fi, then load over the network.** This replaces the 17-min serial upload: a small serial-loaded image fetches the rest over Wi-Fi (NFS root, or kexec into a bigger kernel) | Static `wpa_supplicant` (nl80211, internal TLS) and `udhcpc`; `UNIX98_PTYS`; optionally `KEXEC` | Approve how the credentials get in. Recommended: typed at the serial shell each boot (`wpa_passphrase`), never stored in an image |
-| 2 | **UPC driver**, ABI-compatible with stock `upc.ko`, so upctool, the bridge and the Klipper UPC firmware run unchanged (`docs/kernel/upc_mainline_design.md`) | About 300 lines + DT; panic/reboot hooks that hold the cores and force outputs off | Be present for each step of the bring-up order in that document; heaters and motion only while watching |
+| 2 | **UPC driver**, ABI-compatible with stock `upc.ko`, so upctool, the bridge and the Klipper UPC firmware run unchanged (`docs/upc_mainline_design.md`) | About 300 lines + DT; panic/reboot hooks that hold the cores and force outputs off | Be present for each step of the bring-up order in that document; heaters and motion only while watching |
 | 3 | **SD card** (`sdhci-pxav3`-style glue with the vendor quirks: host version and slot status read 0, capability bit 25 cleared) | Driver + DT | Insert **only the 2 GB rescue card** and confirm it before boot. First boot mounts it read-only |
 | 4 | **GPIO** (8 banks × 32 at 0xf8040000: input +0, output +4, direction +8, plus the vendor's pin-select) | Driver; no pin driven at probe | Be present; approve each output pin by name (the first is GPIO 62, Ethernet PHY reset) |
 | 5 | **Ethernet: pin mux + PHY reset.** MDIO completes but reads ID 0, i.e. the line is held low. The stock board code sets 121 pin functions at boot (`set_pin_config` in the stock dmesg), and U-Boot, with no Ethernet driver, probably leaves the RGMII/MDIO pins unrouted. Then `reset-gpios` = GPIO 62 (low 125 ms, as the vendor does) and the PHY ID check | Recover the `set_pin_config` table from the vendor image (pin → function), then DT; after step 4 | Be present (pin mux = GPIO work); plug in a cable if a link test is wanted |
 | 6 | **I²C (DesignWare) + touch (bu21029) + backlight/PMIC** | DT, mainline drivers | Be present (the PMIC can switch power rails) |
 | 7 | **NAND** (`marvell_nand`, PXA3xx NFC at 0xf9082000), read-only partitions first | **Read-only proven 2026-10-30** (BCH run 3: mtd0/mtd3 equal the stock dumps). Next, read-only too: UBI attach `--readonly` | Read-write stays out of scope until the user decides |
-| 8 | ~~L2 cache (PL310)~~ **DDR write-buffer drain** (2026-10-29): there is no PL310 (the vendor's l2x0_init reads the SCU and GIC). 0xfa300000 is the DDR controller (U-Boot reads its CS address map at +0x100/0x110/0x130, ID "MV" at +0x10). The vendor's only effective "cache" op writes 0x01010101 to +0x530 on every mb(). Mainline: `soc_mb` hook in mach-mv61x0, DT node `marvell,88pa6170-ddr`, **on by default** since the A/B test (no measurable cost, docs/history/kernel/mcsync_ab_test.md) | done | — |
+| 8 | ~~L2 cache (PL310)~~ **DDR write-buffer drain** (2026-10-29): there is no PL310 (the vendor's l2x0_init reads the SCU and GIC). 0xfa300000 is the DDR controller (U-Boot reads its CS address map at +0x100/0x110/0x130, ID "MV" at +0x10). The vendor's only effective "cache" op writes 0x01010101 to +0x530 on every mb(). Mainline: `soc_mb` hook in mach-mv61x0, DT node `marvell,88pa6170-ddr`, **on by default** since the A/B test (no measurable cost, docs/history/mcsync_ab_test.md) | done | — |
 | 9 | **Persistent install** (kernel on SD or NAND) | Only after 1-8 | Explicit approval; it changes what the printer boots |
 
 ## 0. What the offline analysis found
@@ -312,7 +312,7 @@ built-in initramfs. One CPU, no storage, no network.
   visible before the device tree is parsed;
 - an armhf BusyBox for the initramfs. It runs: a new kernel has Thumb.
 
-**Device tree:** `kernel/m1/src/arch/arm/boot/dts/marvell/88pa6170-dp200.dts`: memory 512 MB, CPU
+**Device tree:** `src/arch/arm/boot/dts/marvell/88pa6170-dp200.dts`: memory 512 MB, CPU
 `marvell,pj4b`, GIC, the SoC timer, UART0 at 25 MHz, and
 `earlycon=uart8250,mmio32,0xf8060000 maxcpus=1`.
 
@@ -353,7 +353,7 @@ but leave the serial console to the main session.
 
 | Fact | Why | Command |
 |---|---|---|
-| Offline System.map is right | Every address above relies on it | `cat /proc/kallsyms \| grep -E ' (timer_set_next_event\|gogin_map_io\|boot_secondary\|sic_handler)$'`. Must equal the addresses in `docs/kernel/vendor_System.map` (c001e25c, c0575364 (an init function, still listed), c041b060, c001ee60) |
+| Offline System.map is right | Every address above relies on it | `cat /proc/kallsyms \| grep -E ' (timer_set_next_event\|gogin_map_io\|boot_secondary\|sic_handler)$'`. Must equal the addresses in `docs/vendor_System.map` (c001e25c, c0575364 (an init function, still listed), c041b060, c001ee60) |
 | Clockevent/clocksource names, broadcast mode, no TWD | Confirms timer1/timer2 and that no local timer is registered | `cat /proc/timer_list \| grep -E 'Clock Event Device\|mode\|event_handler'` |
 | CPU features | PJ4B revision, IWMMXT/VFP flags | `cat /proc/cpuinfo` |
 | Full boot log | Any messages lost before the snapshot | `dmesg` (if the ring buffer still holds the boot) |

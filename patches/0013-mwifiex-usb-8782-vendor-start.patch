@@ -28,7 +28,7 @@
 + * 88W8782 start-up as the Marvell SDK (usb8xxx/mlan, card type USB8782)
 + * does it: no winner probe, the whole image, then a read of EP1 for the
 + * firmware's INIT_DONE event (0xBEEFFACE, cause 7, up to 2 s) before any
-+ * command. docs/kernel/wifi_boot_failure.md in the DP200 port.
++ * command. docs/wifi_boot_failure.md in the DP200 port.
 + */
 +static bool usb8782_winner;
 +module_param(usb8782_winner, bool, 0644);

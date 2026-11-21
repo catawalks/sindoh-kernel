@@ -5,7 +5,7 @@
  * timer, UART0, built-in initramfs.
  *
  * Addresses and IRQs come from the vendor 3.2 kernel image
- * (tools/kernel_re/, docs/kernel/vendor_hwtables.txt). The vendor kernel
+ * (tools/kernel_re/, docs/vendor_hwtables.txt). The vendor kernel
  * numbers IRQs as GIC IDs, so GIC_SPI n = vendor IRQ n - 32.
  *
  * Boot: zImage with this DTB appended (ARM_APPENDED_DTB +
@@ -126,7 +126,7 @@
 		 * DDR controller. The vendor kernel writes 0x01010101 to +0x530
 		 * on every mb() (its "outer cache sync"); mv61x0.c does the same
 		 * from soc_mb when this node is enabled. On, as in stock: the A/B
-		 * test showed no measurable cost (docs/kernel/mcsync_ab_test.md).
+		 * test showed no measurable cost (docs/mcsync_ab_test.md).
 		 */
 		mc: memory-controller@fa300000 {
 			compatible = "marvell,88pa6170-ddr";
@@ -144,7 +144,7 @@
 		 * all read-only. ECC: the controller's BCH as stock uses it, 4
 		 * bits per 512 bytes in one 2048-byte chunk (32 spare + 30 ECC
 		 * bytes), read with 3-word commands (patch 0006, bch_v1;
-		 * docs/kernel/nand_bch_plan.md). Raw reads: mtdraw.
+		 * docs/nand_bch_plan.md). Raw reads: mtdraw.
 		 */
 		nand_controller: nand-controller@f9082000 {
 			compatible = "marvell,88pa6170-nand-controller";
@@ -217,7 +217,7 @@
 		 * RTC (vendor gogin-rtc, IRQ 64): a seconds counter at +0x0c.
 		 * "apb" is the APB configuration word whose bit 30 the vendor
 		 * setup clears. rtc-mv61x0 runs the vendor setup only with
-		 * marvell,vendor-setup (docs/kernel/rtc_setup.md).
+		 * marvell,vendor-setup (docs/rtc_setup.md).
 		 */
 		rtc: rtc@f8100000 {
 			compatible = "marvell,88pa6170-rtc";

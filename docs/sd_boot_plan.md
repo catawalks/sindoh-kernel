@@ -270,7 +270,7 @@ values the ROM dump writes to 0xf8041080/84 and 0xf804008c-98 in mode 6. The
 file system (ext2/ext4) plays no part there: the ROM reads raw sectors 0-19.
 
 **Open lead (2026-11-20): boot table in sector 0, as on Sindoh's own SD
-card.** Sindoh's factory recovery card for the 2X r1 ([prime_sd.md](prime_sd.md)),
+card.** Sindoh's factory recovery card for the 2X r1 ([prime_sd.md](https://github.com/catawalks/sindoh/blob/main/docs/prime_sd.md)),
 which the 6270 boot ROM starts from SD, puts the boot table (`c1deed1c`)
 at the very start of **sector 0**, in the same sector as the MBR partition
 table (0x1BE-0x1FF). Its first loader (MiniLoader) follows from sector 1;

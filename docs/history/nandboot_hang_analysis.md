@@ -1,6 +1,6 @@
 # The nandboot hard hangs (11-06, 11-07): analysis and test plan
 
-**Status: SOLVED 2026-11-11** by candidate 3 (dsb sy barriers, patch 0025). History only. Short version: [../../kernel/smp_freeze_summary.md](../../kernel/smp_freeze_summary.md).
+**Status: SOLVED 2026-11-11** by candidate 3 (dsb sy barriers, patch 0025). History only. Short version: [../../kernel/smp_freeze_summary.md](../smp_freeze_summary.md).
 
 Offline analysis, 2026-11-07. Nothing here touched the printer. Inputs: the
 two hangs as the main session reported them, the vendor 3.2 kernel image

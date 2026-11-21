@@ -1,7 +1,7 @@
 #!/bin/sh
 # eth-pinmux.sh, revision 2 (approved by the user 2026-10-29: "yes";
 # m1-eth test 2 passed: PHY 0x01410dd1, link 100/Full, ~10.5 MB/s wget,
-# docs/kernel/m1_eth_test2.md). ethload runs it before eth0 comes up.
+# docs/m1_eth_test2.md). ethload runs it before eth0 comes up.
 #
 # Revision 1 (approved 2026-10-29) routed bank 3 and pulsed the PHY reset;
 # bank 3 then matched stock but MDIO still read all zeros. Revision 2 adds

@@ -250,7 +250,7 @@
 - * after a timeout. If it is corrected, the corrected data replaces the raw
 - * copy; if it cannot be, the raw copy stays and a failure is counted.
 + * bch_v1 (88PA6170) page reads, matched to the vendor 3.2 driver
-+ * (2026-11-01; docs/kernel/nand_bch_plan.md, "Read path rework").
++ * (2026-11-01; docs/nand_bch_plan.md, "Read path rework").
 + *
 + * Like the vendor's mv61x0_nand_do_cmd()/mv61x0_nand_irq(), a page is read
 + * once, with BCH on (2048 data + 32 spare), from a stopped controller, and

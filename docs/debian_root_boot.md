@@ -105,7 +105,7 @@ It is read-only, since the MTD has no MTD_WRITEABLE.
 | `mount -o remount,rw /` | Works with `m1-debian` (root `ro` without noload). With `m1-debian-ro` (noload) it would fail, as intended |
 
 Still open for D2:
-- the touchscreen driver (docs/kernel/touch_bu21029.md) and GPIO interrupts;
+- the touchscreen driver (docs/touch_bu21029.md) and GPIO interrupts;
 - RTC set_time (`marvell,set-time`);
 - the UPC output pads are applied by the kernel, but heat and motion stay the user's call at each step.
 

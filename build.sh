@@ -25,6 +25,10 @@
 set -euo pipefail
 
 M1=$(cd "$(dirname "$0")" && pwd)
+# The sindoh-klipper checkout (upctool source, probe firmware, revert script):
+# next to this repository by default.
+KLIPPER_REPO=${KLIPPER_REPO:-$M1/../klipper_port}
+[ -d "$KLIPPER_REPO/host" ] || KLIPPER_REPO=$M1/../sindoh-klipper
 KVER=6.18.59
 BBVER=1.38.0
 MUSLVER=1.2.6
@@ -61,7 +65,7 @@ else
 	IRFS=$WORK/initramfs-m1-$VARIANT
 fi
 # HANGTEST=up|wrap|errata|errata-dbg|wifidbg|wifitrace|nanddbg|nandirq|nandpcs|nandab|nandtick|nandpte|nandup|nandmb|nandfa|nandwdt|nandram|nandres|nandrnc|nandrso|nandrwb|nandrmv|nandps0|nandps1|nandpad|nandpad2|nandps2|nandps3|nandsz|nandrs|nandps4|nanddrv|nanddrv2|nandupw (VARIANT=nandboot only): the test images of
-# docs/kernel/nandboot_hang_analysis.md, variants/nandboot-$HANGTEST.config
+# docs/nandboot_hang_analysis.md, variants/nandboot-$HANGTEST.config
 # on top of nandboot, e.g. $OUT/m1-nandboot-up.uimg; own build tree
 if [ -n "${HANGTEST:-}" ]; then
 	if [ "$VARIANT" != nandboot ] ||
@@ -237,7 +241,7 @@ build_kexec() {	# kexec-tools, for netload
 }
 build_upctool() {	# host/upctool, the stock-compatible UPC tool
 	"$MUSLCC" -static -O2 -Wall -std=gnu99 -o "$WORK/upctool" \
-		"$M1/../../host/upctool.c"
+		"$KLIPPER_REPO/host/upctool.c"
 	${CROSS}strip "$WORK/upctool"
 }
 # mtd-utils for the nandboot initramfs: ubiformat and flash_erase are not
@@ -287,7 +291,7 @@ if [ $NOFW = 0 ]; then
 	echo "6c11556fd22089c7f084613549a721e2  $FW8782" | md5sum -c --quiet
 fi
 if echo " $USERSPACE " | grep -q " upctool "; then
-	(cd "$M1/../../prebuilt" && md5sum -c --quiet) <<-EOF
+	(cd "$KLIPPER_REPO/prebuilt" && md5sum -c --quiet) <<-EOF
 	96cddffd5fccf68ca6e742b8ee783708  probe_io.bin
 	1ec429d52b1a15dae194fbb8b579c1cc  probe_fm.bin
 	EOF
@@ -313,7 +317,7 @@ fi
 # kexec watchdog in seconds: user-approved 2026-10-29, 0 turns it off)
 if [ "$VARIANT" = nandboot ]; then
 	for f in dp200-revert.sh recovery.md5; do
-		tr -d '\r' < "$M1/../../install/nand/$f" > "$IRFS/$f"
+		tr -d '\r' < "$KLIPPER_REPO/install/nand/$f" > "$IRFS/$f"
 	done
 fi
 if [ "$VARIANT" = eth ]; then
@@ -376,7 +380,7 @@ fi
 			# upctool load; md5 checked like the Wi-Fi firmware
 			echo "dir /lib/firmware/upc 0755 0 0"
 			for c in io fm; do
-				echo "file /lib/firmware/upc/probe_$c.bin $M1/../../prebuilt/probe_$c.bin 0644 0 0"
+				echo "file /lib/firmware/upc/probe_$c.bin $KLIPPER_REPO/prebuilt/probe_$c.bin 0644 0 0"
 			done ;;
 		esac
 	done
@@ -455,7 +459,7 @@ mkimage -A arm -O linux -T kernel -C none -a 0x00008000 -e 0x00008000 \
 
 # 9b. Boot setups of the same kernel: variants/<v>.boot/<b>.dts (the
 # variant's DTS with other bootargs) gives $OUT/m1-<b>-zImage-dtb.bin, e.g.
-# full.boot/debian.dts -> m1-debian (docs/kernel/debian_root_boot.md)
+# full.boot/debian.dts -> m1-debian (docs/debian_root_boot.md)
 for BDTS in "$M1/variants/$VARIANT.boot"/*.dts; do
 	[ -f "$BDTS" ] || continue
 	B=m1-$(basename "$BDTS" .dts)$SUFFIX

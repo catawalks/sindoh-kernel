@@ -1,6 +1,6 @@
 # NAND: stock ECC, and what reading it under mainline needs (2026-10-30)
 
-**Status: DONE** (the mainline NAND driver reads and writes with the stock ECC; our root runs from mtd6 since 2026-11-07). History only. Live facts: [../../nand_layout.md](../../nand_layout.md).
+**Status: DONE** (the mainline NAND driver reads and writes with the stock ECC; our root runs from mtd6 since 2026-11-07). History only. Live facts: [../../nand_layout.md](https://github.com/catawalks/sindoh-klipper/blob/main/docs/nand_layout.md).
 
 ## Stock ECC: BCH, 4 bits per 512 bytes, one 2 KiB chunk
 

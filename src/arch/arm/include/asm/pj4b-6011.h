@@ -4,7 +4,7 @@
  * the 88PA6170 works around it (CONFIG_PJ4B_ERRATA_6011): every LDREX is
  * issued five times, and in kernel atomics and locks with IRQs disabled
  * around the exclusive sequence. Test option for the nandboot hangs
- * (docs/kernel/nandboot_hang_analysis.md).
+ * (docs/nandboot_hang_analysis.md).
  *
  * __PJ4B_LDREX("ldrex %0, [%3]") gives the four extra loads, to put right
  * before the original one (so a "1:" label stays on the first load).

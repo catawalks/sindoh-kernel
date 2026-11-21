@@ -3,7 +3,7 @@
 Offline check, 2026-11-06 (end_goal_install_plan.md, stage 4). Nothing was
 booted or written.
 
-## What stock U-Boot does (env unchanged, docs/kernel/uboot_facts.txt)
+## What stock U-Boot does (env unchanged, docs/uboot_facts.txt)
 
 `bootcmd` -> `mv61X0_nandboot` = `run setbootargs_nand; run load_nand;
 bootm 0x400000`:

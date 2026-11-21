@@ -2,7 +2,7 @@ From: catawalks <59056948+catawalks@users.noreply.github.com>
 Subject: [PATCH] pstore/ram: 88PA61x0: CONFIG_MV61X0_RAMOOPS_NO_INIT test switch
 
 Test option for the DP200 NAND-root hangs, off by default
-(docs/kernel/nandboot_hang_analysis.md, hang 25).
+(docs/nandboot_hang_analysis.md, hang 25).
 ---
 --- a/fs/pstore/ram.c
 +++ b/fs/pstore/ram.c
@@ -10,7 +10,7 @@ Test option for the DP200 NAND-root hangs, off by default
  {
  	int ret;
  
-+	/* DP200 hang analysis (docs/kernel/nandboot_hang_analysis.md, hang 25) */
++	/* DP200 hang analysis (docs/nandboot_hang_analysis.md, hang 25) */
 +	if (IS_ENABLED(CONFIG_MV61X0_RAMOOPS_NO_INIT))
 +		return 0;
 +

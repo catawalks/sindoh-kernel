@@ -15,7 +15,7 @@
 # U-Boot (so mainline) leaves both pads in function 1 (0x000c0301), so
 # nothing drives GPIO 67.
 #
-# Writes (stock values, docs/kernel/stock_pinmux_eth.txt, bank 2 =
+# Writes (stock values, docs/stock_pinmux_eth.txt, bank 2 =
 # 0xf8042000):
 #   1. out bit 3 = 1 (read-modify-write of 0xf8042004), before the
 #      direction, as the vendor does
