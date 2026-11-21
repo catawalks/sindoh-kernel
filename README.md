@@ -412,7 +412,7 @@ as "corrupted" in UBI's attach log. That is expected; UBI refuses only at
 ### full: the proven pieces together (built, not booted)
 
 `m1-full` (SMP) combines the proven variants, towards booting the Debian root
-(docs/mainline_userspace.md):
+(sindoh-klipper `docs/history/mainline_userspace.md`):
 - the SD socket with ext4 and vfat;
 - the UPC driver, with the XENA input pads;
 - GPIO, read-only;
