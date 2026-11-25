@@ -2,6 +2,8 @@
 
 **mtd0 since 2026-11-18:** `m1-nandboot-beeper` 232c743a = this fix (nanddsb a4e0cb33) + the GPIO bank 3 pad setup + the beeper pad (bank3 7eae8600 before it); see [../STATUS.md](https://github.com/catawalks/sindoh-klipper/blob/main/docs/STATUS.md).
 
+**Power-off with the hang watchdog (2026-11-24):** the image in mtd0 resets the board 30 s after a halt or power-off (`hang_wdt=30`), so Mainsail's Shutdown became a reboot (seen on the dev printer, sindoh-klipper TODO 48). `src/drivers/clocksource/timer-mv61x0.c` now stops the watchdog from a reboot notifier on halt and power-off (restart unchanged). Compiled only (W=1, no warnings); not in any image yet: it needs a build, a RAM boot, and the owner's OK for mtd0.
+
 **Status, 2026-11-11:** fixed. mtd0 holds the two-CPU kernel (nanddsb a4e0cb33) and `variants/nandboot.config` now builds the same thing: two CPUs, no `maxcpus=1`, `timer_mv61x0.hang_wdt=30`. See "Candidate 3 result" and "The fix" below. The sections before them describe the state on 11-09 and are kept as history.
 
 This summary is for resuming after the weekly usage reset (2026-11-13 19:00 UTC). The kernel session's detailed log is in [docs/history/nandboot_hang_analysis.md](history/nandboot_hang_analysis.md). Its hand-over note is `docs/history/smp_freeze_resume_plan.md` in the shared side-session notes folder. The day-by-day record is in TODO.md (hangs 9 to 25).

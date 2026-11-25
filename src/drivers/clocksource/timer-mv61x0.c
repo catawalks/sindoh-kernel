@@ -342,7 +342,11 @@ static struct notifier_block mv61x0_restart_nb = {
  * way the vendor's service_watchdog_timer does (low nibble toggled, enable
  * set). A hard hang then resets the board by itself after SECONDS. Off (0)
  * by default. hang_wdt_nokick=1 stops the kicks, to test the reset.
- * Note: after "poweroff" the board resets again once SECONDS are up.
+ * On halt and power-off a reboot notifier stops it: the board has no
+ * software power switch (the power controller cuts power when the button
+ * is held), so a halted system must stay halted. Before 2026-11-24 it
+ * reset the board once SECONDS were up, which made Mainsail's Shutdown a
+ * reboot. A restart keeps it armed (mv61x0_restart resets at once).
  */
 static unsigned int mv61x0_hang_wdt;
 module_param_named(hang_wdt, mv61x0_hang_wdt, uint, 0444);
@@ -360,6 +364,29 @@ static void mv61x0_wdt_kick(struct work_struct *work)
 		writel((readl(wdt) ^ 0xf) | MV61X0_WDT_ENABLE, wdt);
 	schedule_delayed_work(&mv61x0_wdt_work, MV61X0_HANG_WDT_KICK);
 }
+
+/* Halt / power-off: stop the kicks, then timer 0 itself, then the enable */
+static int mv61x0_wdt_halt(struct notifier_block *nb, unsigned long code,
+			   void *unused)
+{
+	void __iomem *wdt = mv61x0_base + MV61X0_WDT_CTRL;
+
+	if (code != SYS_HALT && code != SYS_POWER_OFF)
+		return NOTIFY_DONE;
+	cancel_delayed_work_sync(&mv61x0_wdt_work);
+	/* the same service write as before each change in the init code */
+	writel(readl(wdt) ^ 0xf, wdt);
+	/* a stopped timer cannot run out, even if the enable bit sticks */
+	writel(0, mv61x0_base + MV61X0_CTRL(MV61X0_WDT_TIMER));
+	writel((readl(wdt) ^ 0xf) & ~MV61X0_WDT_ENABLE, wdt);
+	pr_warn("mv61x0-timer: hang watchdog off for %s\n",
+		code == SYS_HALT ? "halt" : "power-off");
+	return NOTIFY_DONE;
+}
+
+static struct notifier_block mv61x0_wdt_halt_nb = {
+	.notifier_call	= mv61x0_wdt_halt,
+};
 
 static int __init mv61x0_hang_wdt_init(void)
 {
@@ -382,6 +409,7 @@ static int __init mv61x0_hang_wdt_init(void)
 
 	INIT_DELAYED_WORK(&mv61x0_wdt_work, mv61x0_wdt_kick);
 	schedule_delayed_work(&mv61x0_wdt_work, MV61X0_HANG_WDT_KICK);
+	register_reboot_notifier(&mv61x0_wdt_halt_nb);
 	pr_warn("mv61x0-timer: hang watchdog armed: reset after %u s without a kick (every 5 s)\n",
 		secs);
 	return 0;
