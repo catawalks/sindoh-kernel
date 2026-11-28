@@ -269,6 +269,27 @@ answer the ROM. That would fit the silent hang. Checkable offline: the
 values the ROM dump writes to 0xf8041080/84 and 0xf804008c-98 in mode 6. The
 file system (ext2/ext4) plays no part there: the ROM reads raw sectors 0-19.
 
+**Checked in the ROM dump 2026-11-28: the pad lead is closed, but for one
+bit.** In mode 6 the ROM (0xf9f083be on) writes the whole pad word
+**0x000C1002** to all six pads: GPIO1 pins 0 and 1 (0xf8041080/84) and
+GPIO0 pins 3 to 6 (0xf804008c-98), through a helper that is a plain
+`str` to base + 0x80 + 4 * pin. That value has function 2, bit 12 and
+bit 18, so everything the working U-Boot values have (0x1002 on clock
+and command, 0x41002 on data), **plus bit 19**, which no working value
+has. What bit 19 does is not known (with bit 18 it may be the second
+pull or drive bit). Cheap test with the owner at the DP200, nothing
+written to NAND: at the U-Boot prompt set the six pads to 0xC1002 and
+see whether `mmc` still reads the card. If it does, the pads are not
+the cause, and what is left is the card's power (see the SDHCI power
+bit above, and the empty jumper pads beside the slot the owner noticed)
+and the boot table's sector (below).
+
+For comparison, the 6270's boot ROM (dumped from the 1X the same day,
+sindoh `docs/1x.md`) is another program altogether (Marvell "TBR", 2014)
+with another pad block (0xd401e000): it sets its SD and eMMC pads from
+tables of full pad words (0x1801, 0x1802). Nothing of its pin setup
+carries over to the 6170.
+
 **Open lead (2026-11-20): boot table in sector 0, as on Sindoh's own SD
 card.** Sindoh's factory recovery card for the 2X r1 ([prime_sd.md](https://github.com/catawalks/sindoh/blob/main/docs/prime_sd.md)),
 which the 6270 boot ROM starts from SD, puts the boot table (`c1deed1c`)
